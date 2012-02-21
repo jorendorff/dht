@@ -82,6 +82,7 @@ struct InsertTest {
 
 template <class Table>
 struct LookupHitTest {
+    enum { M = 8675309 + 1 }; // jenny's number, a prime, plus 1
     Table table;
     size_t errors;
 
@@ -89,7 +90,9 @@ struct LookupHitTest {
         Key k = 1;
         for (size_t i = 0; i < n; i++) {
             table.set(k, k);
-            k = k * 1103515245 + 12345;
+            k = k * 31 % M;
+            if (k == 1)
+                break;
         }
         errors = 0;
     }
@@ -98,8 +101,8 @@ struct LookupHitTest {
         Key k = 1;
         for (size_t i = 0; i < n; i++) {
             if (table.get(k) != k)
-                errors++;
-            k = k * 1103515245 + 12345;
+                abort();
+            k = k * 31 % M;
         }
     }
 };

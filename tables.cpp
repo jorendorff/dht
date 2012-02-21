@@ -6,6 +6,17 @@ using namespace std;
 
 // === OpenTable
 
+OpenTable::OpenTable() {
+    table = new Entry[8];
+    mask = 7;
+    live_count = 0;
+    nonempty_count = 0;
+}
+
+OpenTable::~OpenTable() {
+    delete[] table;
+}
+
 OpenTable::Entry *
 OpenTable::lookup(KeyArg key)
 {
@@ -61,17 +72,6 @@ OpenTable::rehash(Entry *old_table, size_t old_capacity, size_t new_capacity)
             set(p->key, p->value);
     }
     delete[] old_table;
-}
-
-OpenTable::OpenTable() {
-    table = new Entry[8];
-    mask = 7;
-    live_count = 0;
-    nonempty_count = 0;
-}
-
-OpenTable::~OpenTable() {
-    delete[] table;
 }
 
 size_t
@@ -138,6 +138,23 @@ OpenTable::remove(KeyArg key)
 
 // === CloseTable
 
+CloseTable::CloseTable()
+{
+    table = new EntryPtr[4];
+    memset(table, 0, 4 * sizeof(EntryPtr));
+    table_mask = 3;
+    entries = new Entry[8];
+    entries_capacity = 8;
+    entries_length = 0;
+    live_count = 0;
+}
+
+CloseTable::~CloseTable()
+{
+    delete[] table;
+    delete[] entries;
+}
+
 CloseTable::Entry *
 CloseTable::lookup(KeyArg key, hashcode_t h)
 {
@@ -182,24 +199,6 @@ CloseTable::rehash()
     entries = new_entries;
     entries_capacity = new_capacity;
     entries_length = live_count;
-}
-
-
-CloseTable::CloseTable()
-{
-    table = new EntryPtr[4];
-    memset(table, 0, 4 * sizeof(EntryPtr));
-    table_mask = 3;
-    entries = new Entry[8];
-    entries_capacity = 8;
-    entries_length = 0;
-    live_count = 0;
-}
-
-CloseTable::~CloseTable()
-{
-    delete[] table;
-    delete[] entries;
 }
 
 size_t
@@ -252,6 +251,11 @@ CloseTable::set(KeyArg key, ValueArg value)
 bool
 CloseTable::remove(KeyArg key)
 {
+    // If an entry exists for the given key, empty it.
+    //
+    // This never resizes the table. It should, but no tests even call this
+    // method yet. TODO.
+
     hashcode_t h = hash(key);
     Entry *e = lookup(key, h);
     if (e == NULL)

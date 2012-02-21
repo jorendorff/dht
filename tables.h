@@ -45,11 +45,10 @@ class OpenTable {
         Entry() { makeEmpty(key); }
     };
 
-    // Each Entry is either empty, live, or a tombstone.
-    Entry *table;
+    Entry *table;           // power-of-2-sized flat hash table
     size_t live_count;      // number of live entries
     size_t nonempty_count;  // number of live and tombstone entries
-    size_t mask;
+    size_t mask;            // size of table, in elements, minus 1
 
     static const double minFillRatio = 0.25;
     static const double maxFillRatio = 0.75;
@@ -88,12 +87,12 @@ private:
 
     typedef Entry *EntryPtr;
 
-    EntryPtr *table;
-    size_t table_mask;
-    Entry *entries;
-    size_t entries_capacity;
-    size_t entries_length;
-    size_t live_count;  // entries_length less tombstones
+    EntryPtr *table;            // power-of-2-sized hash table
+    size_t table_mask;          // size of table, in elements, minus one
+    Entry *entries;             // power-of-2-sized data vector
+    size_t entries_capacity;    // size of entries, in elements
+    size_t entries_length;      // number of initialized entries
+    size_t live_count;          // entries_length less empty (removed) entries
 
     inline Entry * lookup(KeyArg key, hashcode_t h);
     inline const Entry * lookup(KeyArg key) const;
