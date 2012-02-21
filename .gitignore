@@ -1,0 +1,5 @@
+figure-*-data.txt
+figure-*.png
+*.o
+hashbench
+*~
