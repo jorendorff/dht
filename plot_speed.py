@@ -23,7 +23,8 @@ def main(filename):
             ys = [x/y for x, y in data]
             axes.plot(xs, ys, *args, **kwargs)
 
-        show(results['DenseTable'], '-o', color='#cccccc', label='dense_hash_map (open addressing)')
+        if 'DenseTable' in results:
+            show(results['DenseTable'], '-o', color='#cccccc', label='dense_hash_map (open addressing)')
         show(results['OpenTable'], 'b-o', label='open addressing')
         show(results['CloseTable'], 'r-o', label='Close table')
         axes.legend(loc='best')

@@ -3,7 +3,11 @@
 #include <stdint.h>
 #include <iostream>
 #include <iomanip>
+#ifdef HAVE_GETTIMEOFDAY
 #include <sys/time.h>
+#else
+#include <windows.h>
+#endif
 #include "tables.h"
 
 using namespace std;
@@ -21,12 +25,27 @@ double measure_single_run(size_t n)
     Test test;
     test.setup(n);
 
+#ifdef HAVE_GETTIMEOFDAY
     struct timeval t0, t1;
     gettimeofday(&t0, NULL);
-    test.run(n);
-    gettimeofday(&t1, NULL);
+#else
+    LARGE_INTEGER f, t0, t1;
+    if (!QueryPerformanceFrequency(&f))
+        abort();
+    if (!QueryPerformanceCounter(&t0))
+        abort();
+#endif
 
+    test.run(n);
+
+#ifdef HAVE_GETTIMEOFDAY
+    gettimeofday(&t1, NULL);
     return t1.tv_sec - t0.tv_sec + 1e-6 * (t1.tv_usec - t0.tv_usec);
+#else
+    if (!QueryPerformanceCounter(&t1))
+        abort();
+    return double(t1.QuadPart - t0.QuadPart) / double(f.QuadPart);
+#endif
 }
 
 const double min_run_seconds = 0.1;
@@ -170,9 +189,11 @@ void run_speed_test()
 {
     cout << '{' << endl;
 
+#ifdef HAVE_SPARSEHASH
     cout << "\t\"DenseTable\": ";
     run_time_trials<Test<DenseTable> >();
     cout << ',' << endl;
+#endif
 
     cout << "\t\"OpenTable\": ";
     run_time_trials<Test<OpenTable> >();
@@ -223,13 +244,24 @@ void run_all_speed_tests()
 
 void measure_space(ByteSizeOption opt)
 {
+#ifdef HAVE_SPARSEHASH
     DenseTable ht0;
+#endif
     OpenTable ht1;
     CloseTable ht2;
 
     for (int i = 0; i < 100000; i++) {
-        cout << i << '\t' << ht0.byte_size(opt) << '\t' << ht1.byte_size(opt) << '\t' << ht2.byte_size(opt) << endl;
+        cout << i << '\t'
+#ifdef HAVE_SPARSEHASH
+             << ht0.byte_size(opt) << '\t'
+#else
+             << 1 << '\t'
+#endif
+             << ht1.byte_size(opt) << '\t' << ht2.byte_size(opt) << endl;
+
+#ifdef HAVE_SPARSEHASH
         ht0.set(i + 1, i);
+#endif
         ht1.set(i + 1, i);
         ht2.set(i + 1, i);
     }

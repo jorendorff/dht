@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 #include <cstdlib>
+#ifdef HAVE_SPARSEHASH
 #include <sparsehash/dense_hash_map>
+#endif
 
 // === Keys and values (common definitions used by both hash table implementations)
 
@@ -34,6 +36,7 @@ inline bool isLive(KeyArg k) { return ((k + 1) & ~1) != 0; }
 enum ByteSizeOption { BytesAllocated, BytesWritten };
 
 
+#ifdef HAVE_SPARSEHASH
 // === DenseTable
 // The dense_hash_map type from Google sparsehash, included to give a baseline.
 
@@ -56,6 +59,7 @@ public:
     void set(KeyArg key, ValueArg value);
     bool remove(KeyArg key);
 };
+#endif  // HAVE_SPARSEHASH
 
 
 // === OpenTable
@@ -75,8 +79,8 @@ class OpenTable {
     size_t nonempty_count;  // number of live and tombstone entries
     size_t mask;            // size of table, in elements, minus 1
 
-    static const double minFillRatio = 0.25;
-    static const double maxFillRatio = 0.75;
+    static double min_fill_ratio() { return 0.25; }
+    static double max_fill_ratio() { return 0.75; }
 
     inline Entry * lookup(KeyArg key);
     inline const Entry * lookup(KeyArg key) const;
@@ -113,9 +117,12 @@ private:
     //     entries_capacity == floor((table_mask + 1) * fill_factor()).
     //
     // This fill factor was chosen to make the size of the entries
-    // array close to a power of two on 64-bit systems.
+    // array, in bytes, close to a power of two. (sizeof(Entry)
+    // is 24 on both 32-bit and 64-bit systems.)
     //
-    static double fill_factor() { return 8.0 / 3.0; }
+    static double fill_factor() {
+        return 8.0 / 3.0;
+    }
 
     struct Entry {
         Key key;

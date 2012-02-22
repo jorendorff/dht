@@ -1,5 +1,5 @@
 CXX=g++-apple-4.2
-CXXFLAGS=-O3 -g -Isparsehash-install/include -DNDEBUG
+CXXFLAGS=-O3 -g -DNDEBUG -DHAVE_GETTIMEOFDAY
 
 # To run plot.py, you need Python with matplotlib. Set the python executable to
 # use below.

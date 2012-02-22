@@ -117,7 +117,7 @@ OpenTable::set(KeyArg key, ValueArg value)
     live_count++;
     if (!tomb)
         nonempty_count++;
-    if (nonempty_count > (mask + 1) * maxFillRatio)
+    if (nonempty_count > (mask + 1) * max_fill_ratio())
         grow();
 }
 
@@ -129,12 +129,15 @@ OpenTable::remove(KeyArg key)
         return false;
     makeTombstone(e->key);
     live_count--;
-    if (live_count < (mask + 1) * minFillRatio)
+    if (live_count < (mask + 1) * min_fill_ratio())
         shrink();
+    return true;
 }
 
 
 // === DenseTable
+
+#ifdef HAVE_SPARSEHASH
 
 DenseTable::DenseTable()
 {
@@ -187,6 +190,8 @@ DenseTable::remove(KeyArg key)
     return true;
 }
 
+#endif  // HAVE_SPARSEHASH
+
 
 // === CloseTable
 
@@ -196,7 +201,7 @@ CloseTable::CloseTable()
     table = new EntryPtr[buckets];
     memset(table, 0, buckets * sizeof(EntryPtr));
     table_mask = buckets - 1;
-    entries_capacity = size_t(floor(buckets * fill_factor()));
+    entries_capacity = size_t(buckets * fill_factor());
     entries = new Entry[entries_capacity];
     entries_length = 0;
     live_count = 0;
@@ -228,7 +233,7 @@ CloseTable::rehash()
 {
     int grow = (live_count >= entries_length * 3 / 4) ? 1 : 0;
     size_t new_table_mask = (table_mask << grow) | 1;
-    size_t new_capacity = size_t(fill_factor() * (new_table_mask + 1));
+    size_t new_capacity = size_t((new_table_mask + 1) * fill_factor());
     EntryPtr *new_table = new EntryPtr[new_table_mask + 1];
     memset(new_table, 0, (new_table_mask + 1) * sizeof(EntryPtr));
     Entry *new_entries = new Entry[new_capacity];
