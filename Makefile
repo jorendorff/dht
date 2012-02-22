@@ -1,5 +1,5 @@
 CXX=g++-apple-4.2
-CXXFLAGS=-O3 -g
+CXXFLAGS=-O3 -g -Isparsehash-install/include -DNDEBUG
 
 # To run plot.py, you need Python with matplotlib. Set the python executable to
 # use below.
@@ -11,6 +11,13 @@ CXXFLAGS=-O3 -g
 # configured ports to install stuff) and that copy has matplotlib.
 #
 PYTHON=/opt/local/bin/python2.7
+
+SPEED_IMAGES=\
+  InsertTest-speed.png \
+  LookupHitTest-speed.png \
+  LookupMissTest-speed.png
+
+all: figure-1.png figure-2.png $(SPEED_IMAGES)
 
 figure-1.png: figure-1-data.txt plot.py
 	$(PYTHON) plot.py $< $@
@@ -24,11 +31,27 @@ figure-1-data.txt: hashbench
 figure-2-data.txt: hashbench
 	./hashbench -w > $@
 
+$(SPEED_IMAGES): hashbench-data.txt plot_speed.py
+	$(PYTHON) plot_speed.py $<
+
+hashbench-data.txt: hashbench
+	./hashbench > $@
+
 hashbench: hashbench.o tables.o
 	$(CXX) -o $@ $^
 
-hashbench.o: hashbench.cpp tables.h
+hashbench.o: hashbench.cpp tables.h sparsehash-install/include/sparsehash/dense_hash_map
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-tables.o: tables.cpp tables.h
+tables.o: tables.cpp tables.h sparsehash-install/include/sparsehash/dense_hash_map
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
+
+sparsehash-sources/configure:
+	svn checkout http://sparsehash.googlecode.com/svn/trunk/ sparsehash-sources
+
+sparsehash-install/include/sparsehash/dense_hash_map: sparsehash-sources/configure
+	cd sparsehash-sources && \
+		./configure --prefix=$(PWD)/sparsehash-install && \
+		make && \
+		make install
+

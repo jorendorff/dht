@@ -136,6 +136,60 @@ OpenTable::remove(KeyArg key)
 }
 
 
+// === DenseTable
+
+DenseTable::DenseTable()
+{
+    Key k;
+    makeEmpty(k);
+    map.set_empty_key(k);
+    makeTombstone(k);
+    map.set_deleted_key(k);
+}
+
+size_t
+DenseTable::byte_size(ByteSizeOption) const
+{
+    return sizeof(*this) + sizeof(std::pair<const Key, Value>) * map.bucket_count();
+}
+
+size_t
+DenseTable::size() const
+{
+    return map.size();
+}
+
+bool
+DenseTable::has(KeyArg key) const
+{
+    return map.find(key) != map.end();
+}
+
+Value
+DenseTable::get(KeyArg key) const
+{
+    Map::const_iterator it = map.find(key);
+    return (it == map.end() ? Value() : it->second);
+}
+
+void
+DenseTable::set(KeyArg key, ValueArg value)
+{
+    map[key] = value;
+}
+
+bool
+DenseTable::remove(KeyArg key)
+{
+    // dense_hash_map does not resize the table on removing entries. TODO.
+    Map::iterator it = map.find(key);
+    if (it == map.end())
+        return false;
+    map.erase(it);
+    return true;
+}
+
+
 // === CloseTable
 
 CloseTable::CloseTable()

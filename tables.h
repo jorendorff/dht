@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <cstdlib>
-
+#include <sparsehash/dense_hash_map>
 
 // === Keys and values (common definitions used by both hash table implementations)
 
@@ -32,6 +32,31 @@ inline void makeTombstone(Key &k) { k = Key(-1); }
 inline bool isLive(KeyArg k) { return ((k + 1) & ~1) != 0; }
 
 enum ByteSizeOption { BytesAllocated, BytesWritten };
+
+
+// === DenseTable
+// The dense_hash_map type from Google sparsehash, included to give a baseline.
+
+class DenseTable {
+private:
+    struct Hasher {
+        size_t operator()(KeyArg key) const { return hash(key); }
+    };
+
+    typedef google::dense_hash_map<Key, Value, Hasher> Map;
+    Map map;
+
+public:
+    DenseTable();
+
+    size_t byte_size(ByteSizeOption option) const;
+    size_t size() const;
+    bool has(KeyArg key) const;
+    Value get(KeyArg key) const;
+    void set(KeyArg key, ValueArg value);
+    bool remove(KeyArg key);
+};
+
 
 // === OpenTable
 // A simple hash table with open addressing.

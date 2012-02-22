@@ -52,7 +52,6 @@ void run_time_trials()
             break;
         }
     }
-    cout << "\t#estimated speed: " << estimated_speed << endl;
 
     // Now run trials of increasing size and print the results.
     double total = 0;
@@ -60,7 +59,7 @@ void run_time_trials()
         double target_dt = min_run_seconds + double(i) / (trials - 1) * (max_run_seconds - min_run_seconds);
         size_t n = size_t(ceil(estimated_speed * target_dt));
         double dt = measure_single_run<Test>(n);
-        cout << '\t' << n << '\t' << dt << endl;
+        cout << "\t\t[" << n << ", " << dt << (i < trials - 1 ? "]," : "]") << endl;
     }
 }
 
@@ -107,34 +106,76 @@ struct LookupHitTest {
     }
 };
 
+template <class Table>
+struct LookupMissTest {
+    enum { M = 8675309 + 1 }; // jenny's number, a prime, plus 1
+    Table table;
+    size_t errors;
+
+    void setup(size_t n) {
+        Key k = 1;
+        for (size_t i = 0; i < n; i++) {
+            table.set(k, k);
+            k = k * 31 % M;
+            if (k == 1)
+                break;
+        }
+        errors = 0;
+    }
+
+    void run(size_t n) {
+        Key k = 1;
+        for (size_t i = 0; i < n; i++) {
+            if (table.get(k + M) != 0)
+                abort();
+            k = k * 31 % M;
+        }
+    }
+};
+
 template <template <class> class Test>
 void run_test(const char *name)
 {
-    cout << name << " OpenTable:" << endl;
-    run_time_trials<Test<OpenTable> >();
-    cout << endl;
+    cout << '"' << name << "\": {" << endl;
+    
+    cout << "\t\"DenseTable\": [" << endl;
+    run_time_trials<Test<DenseTable> >();
+    cout << "\t]," << endl;
 
-    cout << name << " CloseTable:" << endl;
+    cout << "\t\"OpenTable\": [" << endl;
+    run_time_trials<Test<OpenTable> >();
+    cout << "\t]," << endl;
+
+    cout << "\t\"CloseTable\": [" << endl;
     run_time_trials<Test<CloseTable> >();
-    cout << endl;
+    cout << "\t]" << endl;
+
+    cout << "}" << endl;
 }
 
 int main(int argc, const char **argv) {
     if (argc > 1 && (strcmp(argv[1], "-m") == 0 || strcmp(argv[1], "-w") == 0)) {
         ByteSizeOption opt = (argv[1][1] == 'm' ? BytesAllocated : BytesWritten);
+        DenseTable ht0;
         OpenTable ht1;
         CloseTable ht2;
 
         for (int i = 0; i < 100000; i++) {
-            cout << i << '\t' << ht1.byte_size(opt) << '\t' << ht2.byte_size(opt) << endl;
-            ht1.set(i, i);
-            ht2.set(i, i);
+            cout << i << '\t' << ht0.byte_size(opt) << '\t' << ht1.byte_size(opt) << '\t' << ht2.byte_size(opt) << endl;
+            ht0.set(i + 1, i);
+            ht1.set(i + 1, i);
+            ht2.set(i + 1, i);
         }
         return 0;
     }
 
+    cout << "{" << endl;
     run_test<InsertTest>("InsertTest");
+    cout << "," << endl;
     run_test<LookupHitTest>("LookupHitTest");
+    cout << "," << endl;
+    run_test<LookupHitTest>("LookupMissTest");
+    cout << "}" << endl;
 
     return 0;
 }

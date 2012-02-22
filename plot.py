@@ -18,15 +18,17 @@ def main(filename, outfilename):
     index = data[:,0]
     series1 = data[:,1]
     series2 = data[:,2]
-    loglog(index, series1, 'b-', label='open addressing')
-    loglog(index, series2, 'r-', label='Close table')
+    series3 = data[:,3]
+    loglog(index, series1, '-', color='#cccccc', label='dense_hash_map (open addressing)')
+    loglog(index, series2, 'b-', label='open addressing')
+    loglog(index, series3, 'r-', label='Close table')
     legend(loc='upper left')
     savefig(outfilename, format='png')
 
     # compute and print summary information about which is bigger
     r1 = []
     r2 = []
-    for i, s1, s2 in data:
+    for i, _, s1, s2 in data:
         if s1 > s2:
             r1.append(s1/s2)
         else:

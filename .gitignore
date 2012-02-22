@@ -1,5 +1,9 @@
-figure-*-data.txt
-figure-*.png
+*~
 *.o
 hashbench
-*~
+figure-*-data.txt
+figure-*.png
+hashbench-data.txt
+*-speed.png
+sparsehash-install
+sparsehash-sources
