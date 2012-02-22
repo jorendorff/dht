@@ -67,7 +67,7 @@ void run_time_trials()
 // === Tests
 
 template <class Table>
-struct InsertTest {
+struct InsertLargeTest {
     Table table;
     void setup(size_t) {}
     void run(size_t n) {
@@ -75,6 +75,34 @@ struct InsertTest {
         for (size_t i = 0; i < n; i++) {
             table.set(k, k);
             k = k * 1103515245 + 12345;
+        }
+    }
+};
+
+// This test repeatedly builds a table of pseudorandom size (an exponential
+// distribution with median size 100), then discards the table and starts over.
+// It stops when it has done n total inserts.
+//
+// For a given n, the workload is deterministic.
+//
+// It would be simpler to repeatedly build tables of a particular
+// size. However, all the implementations have particular sizes at which they
+// rehash, an expensive operation that is *meant* to be amortized across all
+// the other inserts. The benchmark should not reward implementations for
+// having any particular rehashing threshold; so we build tables of a variety
+// of sizes.
+//
+template <class Table>
+struct InsertSmallTest {
+    void setup(size_t) {}
+    void run(size_t n) {
+        Key k = 1;
+        while (n) {
+            Table table;
+            do {
+                table.set(k, k);
+                k = k * 1103515245 + 12345;
+            } while (--n && k % 145 != 0);
         }
     }
 };
@@ -170,7 +198,9 @@ int main(int argc, const char **argv) {
     }
 
     cout << "{" << endl;
-    run_test<InsertTest>("InsertTest");
+    run_test<InsertLargeTest>("InsertLargeTest");
+    cout << "," << endl;
+    run_test<InsertSmallTest>("InsertSmallTest");
     cout << "," << endl;
     run_test<LookupHitTest>("LookupHitTest");
     cout << "," << endl;

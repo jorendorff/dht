@@ -43,8 +43,6 @@ OpenTable::grow()
     Entry *old_table = table;
     size_t old_capacity = mask + 1;
     size_t new_capacity = 2 * old_capacity;
-    table = new Entry[new_capacity];
-    mask = new_capacity - 1;
     rehash(old_table, old_capacity, new_capacity);
 }
 
@@ -194,11 +192,11 @@ DenseTable::remove(KeyArg key)
 
 CloseTable::CloseTable()
 {
-    table = new EntryPtr[4];
-    memset(table, 0, 4 * sizeof(EntryPtr));
-    table_mask = 3;
-    entries = new Entry[8];
-    entries_capacity = 8;
+    table = new EntryPtr[InitialSize];
+    memset(table, 0, InitialSize * sizeof(EntryPtr));
+    table_mask = InitialSize - 1;
+    entries_capacity = FillFactor * InitialSize;
+    entries = new Entry[entries_capacity];
     entries_length = 0;
     live_count = 0;
 }

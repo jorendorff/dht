@@ -13,7 +13,8 @@ CXXFLAGS=-O3 -g -Isparsehash-install/include -DNDEBUG
 PYTHON=/opt/local/bin/python2.7
 
 SPEED_IMAGES=\
-  InsertTest-speed.png \
+  InsertSmallTest-speed.png \
+  InsertLargeTest-speed.png \
   LookupHitTest-speed.png \
   LookupMissTest-speed.png
 

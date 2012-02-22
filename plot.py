@@ -34,8 +34,8 @@ def main(filename, outfilename):
         else:
             r2.append(s2/s1)
 
-    r1avg = sum(r1)/len(r1) - 1
-    r2avg = sum(r2)/len(r2) - 1
+    r1avg = sum(r1)/len(r1) - 1 if len(r1) else 0
+    r2avg = sum(r2)/len(r2) - 1 if len(r2) else 0
     r1f = len(r1)/len(data)
     r2f = len(r2)/len(data)
     print("Implementation 1 takes up more space {:.1%} of the time, by {:.1%}".format(r1f, r1avg))

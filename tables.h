@@ -104,6 +104,11 @@ public:
 //
 class CloseTable {
 private:
+    enum {
+        InitialSize = 4,
+        FillFactor = 3
+    };
+
     struct Entry {
         Key key;
         Value value;
