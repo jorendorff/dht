@@ -104,10 +104,18 @@ public:
 //
 class CloseTable {
 private:
-    enum {
-        InitialSize = 4,
-        FillFactor = 3
-    };
+    // The number of buckets in the table initially.
+    // This must be one less than a power of two.
+    static size_t initial_buckets() { return 4; }
+
+    // The maximum load factor (mean number of entries per bucket).
+    // It is an invariant that
+    //     entries_capacity == floor((table_mask + 1) * fill_factor()).
+    //
+    // This fill factor was chosen to make the size of the entries
+    // array close to a power of two on 64-bit systems.
+    //
+    static double fill_factor() { return 8.0 / 3.0; }
 
     struct Entry {
         Key key;
@@ -119,7 +127,7 @@ private:
 
     EntryPtr *table;            // power-of-2-sized hash table
     size_t table_mask;          // size of table, in elements, minus one
-    Entry *entries;             // power-of-2-sized data vector
+    Entry *entries;             // data vector, an array of Entry objects
     size_t entries_capacity;    // size of entries, in elements
     size_t entries_length;      // number of initialized entries
     size_t live_count;          // entries_length less empty (removed) entries

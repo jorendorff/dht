@@ -192,10 +192,11 @@ DenseTable::remove(KeyArg key)
 
 CloseTable::CloseTable()
 {
-    table = new EntryPtr[InitialSize];
-    memset(table, 0, InitialSize * sizeof(EntryPtr));
-    table_mask = InitialSize - 1;
-    entries_capacity = FillFactor * InitialSize;
+    size_t buckets = initial_buckets();
+    table = new EntryPtr[buckets];
+    memset(table, 0, buckets * sizeof(EntryPtr));
+    table_mask = buckets - 1;
+    entries_capacity = size_t(floor(buckets * fill_factor()));
     entries = new Entry[entries_capacity];
     entries_length = 0;
     live_count = 0;
@@ -226,8 +227,8 @@ void
 CloseTable::rehash()
 {
     int grow = (live_count >= entries_length * 3 / 4) ? 1 : 0;
-    size_t new_capacity = entries_capacity << grow;
     size_t new_table_mask = (table_mask << grow) | 1;
+    size_t new_capacity = size_t(fill_factor() * (new_table_mask + 1));
     EntryPtr *new_table = new EntryPtr[new_table_mask + 1];
     memset(new_table, 0, (new_table_mask + 1) * sizeof(EntryPtr));
     Entry *new_entries = new Entry[new_capacity];

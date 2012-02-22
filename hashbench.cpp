@@ -43,6 +43,8 @@ const int trials = 10; // can't be 1
 template <class Test>
 void run_time_trials()
 {
+    cout << "[\n";
+
     // Estimate how many iterations per second we can do.
     double estimated_speed;
     for (size_t n = 1; ; n *= 2) {
@@ -61,6 +63,8 @@ void run_time_trials()
         double dt = measure_single_run<Test>(n);
         cout << "\t\t[" << n << ", " << dt << (i < trials - 1 ? "]," : "]") << endl;
     }
+
+    cout << "\t]";
 }
 
 
@@ -162,50 +166,87 @@ struct LookupMissTest {
 };
 
 template <template <class> class Test>
-void run_test(const char *name)
+void run_speed_test()
 {
-    cout << '"' << name << "\": {" << endl;
-    
-    cout << "\t\"DenseTable\": [" << endl;
+    cout << '{' << endl;
+
+    cout << "\t\"DenseTable\": ";
     run_time_trials<Test<DenseTable> >();
-    cout << "\t]," << endl;
+    cout << ',' << endl;
 
-    cout << "\t\"OpenTable\": [" << endl;
+    cout << "\t\"OpenTable\": ";
     run_time_trials<Test<OpenTable> >();
-    cout << "\t]," << endl;
+    cout << ',' << endl;
 
-    cout << "\t\"CloseTable\": [" << endl;
+    cout << "\t\"CloseTable\": ";
     run_time_trials<Test<CloseTable> >();
-    cout << "\t]" << endl;
+    cout << endl;
+
+    cout << "}";
+}
+
+void run_one_speed_test(const char *name)
+{
+    if (strcmp(name, "InsertLargeTest") == 0)
+        run_speed_test<InsertLargeTest>();
+    else if (strcmp(name, "InsertSmallTest") == 0)
+        run_speed_test<InsertSmallTest>();
+    else if (strcmp(name, "LookupHitTest") == 0)
+        run_speed_test<LookupHitTest>();
+    else if (strcmp(name, "LookupMissTest") == 0)
+        run_speed_test<LookupMissTest>();
+    else
+        cerr << "No such test: " << name << endl;
+}
+
+void run_all_speed_tests()
+{
+    cout << "{" << endl;
+
+    cout << "\"InsertLargeTest\": ";
+    run_speed_test<InsertLargeTest>();
+    cout << "," << endl;
+
+    cout << "\"InsertSmallTest\": ";
+    run_speed_test<InsertSmallTest>();
+    cout << "," << endl;
+
+    cout << "\"LookupHitTest\": ";
+    run_speed_test<LookupHitTest>();
+    cout << "," << endl;
+
+    cout << "\"LookupMissTest\": ";
+    run_speed_test<LookupMissTest>();
 
     cout << "}" << endl;
 }
 
-int main(int argc, const char **argv) {
-    if (argc > 1 && (strcmp(argv[1], "-m") == 0 || strcmp(argv[1], "-w") == 0)) {
-        ByteSizeOption opt = (argv[1][1] == 'm' ? BytesAllocated : BytesWritten);
-        DenseTable ht0;
-        OpenTable ht1;
-        CloseTable ht2;
+void measure_space(ByteSizeOption opt)
+{
+    DenseTable ht0;
+    OpenTable ht1;
+    CloseTable ht2;
 
-        for (int i = 0; i < 100000; i++) {
-            cout << i << '\t' << ht0.byte_size(opt) << '\t' << ht1.byte_size(opt) << '\t' << ht2.byte_size(opt) << endl;
-            ht0.set(i + 1, i);
-            ht1.set(i + 1, i);
-            ht2.set(i + 1, i);
-        }
-        return 0;
+    for (int i = 0; i < 100000; i++) {
+        cout << i << '\t' << ht0.byte_size(opt) << '\t' << ht1.byte_size(opt) << '\t' << ht2.byte_size(opt) << endl;
+        ht0.set(i + 1, i);
+        ht1.set(i + 1, i);
+        ht2.set(i + 1, i);
     }
+}
 
-    cout << "{" << endl;
-    run_test<InsertLargeTest>("InsertLargeTest");
-    cout << "," << endl;
-    run_test<InsertSmallTest>("InsertSmallTest");
-    cout << "," << endl;
-    run_test<LookupHitTest>("LookupHitTest");
-    cout << "," << endl;
-    run_test<LookupHitTest>("LookupMissTest");
-    cout << "}" << endl;
+int main(int argc, const char **argv) {
+    if (argc == 2 && (strcmp(argv[1], "-m") == 0 || strcmp(argv[1], "-w") == 0)) {
+        measure_space(argv[1][1] == 'm' ? BytesAllocated : BytesWritten);
+    } else if (argc == 1) {
+        //cout << measure_single_run<LookupHitTest<OpenTable> >(1000000) << endl;
+        run_all_speed_tests();
+    } else if (argc == 2) {
+        run_one_speed_test(argv[1]);
+    } else {
+        cerr << "usage:\n  " << argv[0] << "\n  " << argv[0] << " -m\n  " << argv[0] << " -w\n";
+        return 1;
+    }
 
     return 0;
 }
