@@ -319,7 +319,6 @@ CloseTable::remove(KeyArg key)
     if (e == NULL)
         return false;
     live_count--;
-    table[h & table_mask] = e->chain;
     makeEmpty(e->key);
     return true;
 }

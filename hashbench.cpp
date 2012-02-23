@@ -184,6 +184,85 @@ struct LookupMissTest {
     }
 };
 
+// This test adds and removes entries from a table in FIFO order.
+template <class Table>
+struct WorklistTest {
+    Table table;
+    Key r, w;
+
+    void setup(size_t) {
+        r = 1;
+        w = 1;
+        for (int i = 0; i < 700; i++) {
+            table.set(w, w);
+            w = w * 1103515245 + 12345;
+        }
+    }
+
+    void run(size_t n) {
+        for (size_t i = 0; i < n; i++) {
+            table.set(w, w);
+            w = w * 1103515245 + 12345;
+
+            if (!table.remove(r))
+                abort();
+            r = r * 1103515245 + 12345;
+        }
+    }
+};
+
+template <class Table>
+struct DeleteTest {
+    Table table;
+
+    void setup(size_t n) {
+        while (n % 7 == 0 || n % 11 == 0)
+            n++;
+
+        Key k = 0;
+        for (size_t i = 0; i < n; i++) {
+            table.set(k + 1, 0);
+            k = (k + 7) % n;
+        }
+    }
+
+    void run(size_t n) {
+        while (n % 7 == 0 || n % 11 == 0)
+            n++;
+
+        Key k = 0;
+        for (size_t i = 0; i < n; i++) {
+            if (!table.remove(k + 1))
+                abort();
+            k = (k + 11) % n;
+        }
+    }
+};
+
+template <class Table>
+struct LookupAfterDeleteTest {
+    Table table;
+
+    enum { Size = 50000 };
+
+    void setup(size_t n) {
+        for (size_t i = 1; i <= Size; i++)
+            table.set(i, i);
+        for (size_t i = 1; i <= Size; i++) {
+            if ((i & 0xff) != 0)
+                table.remove(i);
+        }
+    }
+
+    void run(size_t n) {
+        for (size_t i = 1; i <= n; i++) {
+            Key k = i % Size;
+            if (table.get(k) != ((k & 0xff) == 0 ? k : Value()))
+                abort();
+        }
+    }
+};
+
 template <template <class> class Test>
 void run_speed_test()
 {
@@ -216,6 +295,12 @@ void run_one_speed_test(const char *name)
         run_speed_test<LookupHitTest>();
     else if (strcmp(name, "LookupMissTest") == 0)
         run_speed_test<LookupMissTest>();
+    else if (strcmp(name, "WorklistTest") == 0)
+        run_speed_test<WorklistTest>();
+    else if (strcmp(name, "DeleteTest") == 0)
+        run_speed_test<DeleteTest>();
+    else if (strcmp(name, "LookupAfterDeleteTest") == 0)
+        run_speed_test<LookupAfterDeleteTest>();
     else
         cerr << "No such test: " << name << endl;
 }
@@ -238,6 +323,18 @@ void run_all_speed_tests()
 
     cout << "\"LookupMissTest\": ";
     run_speed_test<LookupMissTest>();
+    cout << "," << endl;
+
+    cout << "\"WorklistTest\": ";
+    run_speed_test<WorklistTest>();
+    cout << "," << endl;
+
+    cout << "\"DeleteTest\": ";
+    run_speed_test<DeleteTest>();
+    cout << "," << endl;
+
+    cout << "\"LookupAfterDeleteTest\": ";
+    run_speed_test<LookupAfterDeleteTest>();
 
     cout << "}" << endl;
 }
