@@ -85,9 +85,7 @@ class OpenTable {
     inline Entry * lookup(KeyArg key);
     inline const Entry * lookup(KeyArg key) const;
 
-    void grow();
-    void shrink();
-    void rehash(Entry *old_table, size_t old_capacity, size_t new_capacity);
+    void rehash(size_t new_capacity);
 
 public:
     OpenTable();
@@ -120,9 +118,11 @@ private:
     // array, in bytes, close to a power of two. (sizeof(Entry)
     // is 24 on both 32-bit and 64-bit systems.)
     //
-    static double fill_factor() {
-        return 8.0 / 3.0;
-    }
+    static double fill_factor() { return 8.0 / 3.0; }
+
+    // The minimum permitted value of (live_count / entries_length).
+    // If that ratio drops below this value, we shrink the table.
+    static double min_vector_fill() { return 0.25; }
 
     struct Entry {
         Key key;
@@ -141,7 +141,7 @@ private:
 
     inline Entry * lookup(KeyArg key, hashcode_t h);
     inline const Entry * lookup(KeyArg key) const;
-    void rehash();
+    void rehash(size_t new_table_mask);
 
 public:
     CloseTable();

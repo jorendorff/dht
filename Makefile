@@ -16,7 +16,10 @@ SPEED_IMAGES=\
   InsertSmallTest-speed.png \
   InsertLargeTest-speed.png \
   LookupHitTest-speed.png \
-  LookupMissTest-speed.png
+  LookupMissTest-speed.png \
+  WorklistTest-speed.png \
+  DeleteTest-speed.png \
+  LookupAfterDeleteTest-speed.png
 
 all: figure-1.png figure-2.png $(SPEED_IMAGES)
 

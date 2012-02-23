@@ -50,7 +50,6 @@ double measure_single_run(size_t n)
 
 const double min_run_seconds = 0.1;
 const double max_run_seconds = 1.0;
-const int trials = 10; // can't be 1
 
 // Run several Tests of different sizes. Write results to stdout.
 //
@@ -76,6 +75,7 @@ void run_time_trials()
 
     // Now run trials of increasing size and print the results.
     double total = 0;
+    const int trials = Test::trials();
     for (int i = 0; i < trials; i++) {
         double target_dt = min_run_seconds + double(i) / (trials - 1) * (max_run_seconds - min_run_seconds);
         size_t n = size_t(ceil(estimated_speed * target_dt));
@@ -89,8 +89,16 @@ void run_time_trials()
 
 // === Tests
 
+struct GoodTest {
+    static int trials() { return 10; }
+};
+
+struct SquirrelyTest {
+    static int trials() { return 25; }
+};
+
 template <class Table>
-struct InsertLargeTest {
+struct InsertLargeTest : SquirrelyTest {
     Table table;
     void setup(size_t) {}
     void run(size_t n) {
@@ -116,7 +124,7 @@ struct InsertLargeTest {
 // of sizes.
 //
 template <class Table>
-struct InsertSmallTest {
+struct InsertSmallTest : GoodTest {
     void setup(size_t) {}
     void run(size_t n) {
         Key k = 1;
@@ -131,7 +139,7 @@ struct InsertSmallTest {
 };
 
 template <class Table>
-struct LookupHitTest {
+struct LookupHitTest : GoodTest {
     enum { M = 8675309 + 1 }; // jenny's number, a prime, plus 1
     Table table;
     size_t errors;
@@ -158,7 +166,7 @@ struct LookupHitTest {
 };
 
 template <class Table>
-struct LookupMissTest {
+struct LookupMissTest : GoodTest {
     enum { M = 8675309 + 1 }; // jenny's number, a prime, plus 1
     Table table;
     size_t errors;
@@ -186,7 +194,7 @@ struct LookupMissTest {
 
 // This test adds and removes entries from a table in FIFO order.
 template <class Table>
-struct WorklistTest {
+struct WorklistTest : GoodTest {
     Table table;
     Key r, w;
 
@@ -212,7 +220,7 @@ struct WorklistTest {
 };
 
 template <class Table>
-struct DeleteTest {
+struct DeleteTest : SquirrelyTest {
     Table table;
 
     void setup(size_t n) {
@@ -240,7 +248,7 @@ struct DeleteTest {
 };
 
 template <class Table>
-struct LookupAfterDeleteTest {
+struct LookupAfterDeleteTest : GoodTest {
     Table table;
 
     enum { Size = 50000 };
@@ -301,8 +309,11 @@ void run_one_speed_test(const char *name)
         run_speed_test<DeleteTest>();
     else if (strcmp(name, "LookupAfterDeleteTest") == 0)
         run_speed_test<LookupAfterDeleteTest>();
-    else
+    else {
         cerr << "No such test: " << name << endl;
+        return;
+    }
+    cout << endl;
 }
 
 void run_all_speed_tests()

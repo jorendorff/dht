@@ -38,34 +38,15 @@ OpenTable::lookup(KeyArg key) const
 }
 
 void
-OpenTable::grow()
+OpenTable::rehash(size_t new_capacity)
 {
     Entry *old_table = table;
-    size_t old_capacity = mask + 1;
-    size_t new_capacity = 2 * old_capacity;
-    rehash(old_table, old_capacity, new_capacity);
-}
-
-void
-OpenTable::shrink()
-{
-    if (mask <= 7)
-        return;  // don't bother
-
-    Entry *old_table = table;
-    size_t old_capacity = mask + 1;
-    size_t new_capacity = old_capacity / 2;
-    rehash(old_table, old_capacity, new_capacity);
-}
-
-void
-OpenTable::rehash(Entry *old_table, size_t old_capacity, size_t new_capacity)
-{
+    Entry *old_table_end = table + mask + 1;
     table = new Entry[new_capacity];
     mask = new_capacity - 1;
     live_count = 0;
     nonempty_count = 0;
-    for (Entry *p = old_table, *end = p + old_capacity; p != end; ++p) {
+    for (Entry *p = old_table; p != old_table_end; ++p) {
         if (isLive(p->key))
             set(p->key, p->value);
     }
@@ -118,7 +99,7 @@ OpenTable::set(KeyArg key, ValueArg value)
     if (!tomb)
         nonempty_count++;
     if (nonempty_count > (mask + 1) * max_fill_ratio())
-        grow();
+        rehash((mask + 1) << 1);
 }
 
 bool
@@ -129,8 +110,8 @@ OpenTable::remove(KeyArg key)
         return false;
     makeTombstone(e->key);
     live_count--;
-    if (live_count < (mask + 1) * min_fill_ratio())
-        shrink();
+    if (mask > 7 && live_count < (mask + 1) * min_fill_ratio())
+        rehash((mask + 1) >> 1);
     return true;
 }
 
@@ -182,11 +163,13 @@ DenseTable::set(KeyArg key, ValueArg value)
 bool
 DenseTable::remove(KeyArg key)
 {
-    // dense_hash_map does not resize the table on removing entries. TODO.
     Map::iterator it = map.find(key);
     if (it == map.end())
         return false;
     map.erase(it);
+    size_t n = map.bucket_count();
+    if (n > 32 && map.size() <= n / 8)
+        map.resize(0);
     return true;
 }
 
@@ -229,10 +212,8 @@ CloseTable::lookup(KeyArg key) const {
 }
 
 void
-CloseTable::rehash()
+CloseTable::rehash(size_t new_table_mask)
 {
-    int grow = (live_count >= entries_length * 3 / 4) ? 1 : 0;
-    size_t new_table_mask = (table_mask << grow) | 1;
     size_t new_capacity = size_t((new_table_mask + 1) * fill_factor());
     EntryPtr *new_table = new EntryPtr[new_table_mask + 1];
     memset(new_table, 0, (new_table_mask + 1) * sizeof(EntryPtr));
@@ -294,8 +275,13 @@ CloseTable::set(KeyArg key, ValueArg value)
     if (e) {
         e->value = value;
     } else {
-        if (entries_length == entries_capacity)
-            rehash();
+        if (entries_length == entries_capacity) {
+            // If the table is more than 1/4 deleted entries, simply rehash in
+            // place to free up some space. Otherwise, grow the table.
+            rehash(live_count >= entries_capacity * 0.75
+                   ? (table_mask << 1) | 1
+                   : table_mask);
+        }
         h &= table_mask;
         live_count++;
         e = &entries[entries_length++];
@@ -310,15 +296,14 @@ bool
 CloseTable::remove(KeyArg key)
 {
     // If an entry exists for the given key, empty it.
-    //
-    // This never resizes the table. It should, but no tests even call this
-    // method yet. TODO.
-
-    hashcode_t h = hash(key);
-    Entry *e = lookup(key, h);
+    Entry *e = lookup(key, hash(key));
     if (e == NULL)
         return false;
     live_count--;
     makeEmpty(e->key);
+
+    // If many entries have been removed, shrink the table.
+    if (table_mask > initial_buckets() && live_count < entries_length * min_vector_fill())
+        rehash(table_mask >> 1);
     return true;
 }
