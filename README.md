@@ -8,6 +8,7 @@ Updates will be posted to [the deterministic hash tables page](https://wiki.mozi
 **To run benchmarks on Mac/Linux:**
 
 * Install matplotlib. If you have MacPorts, you can do `sudo port install py27-matplotlib` but note that this doesn't install matplotlib in your Mac's system python installation. Instead it installs a copy of python in /opt/local/bin (or wherever you've configured ports to install stuff) and that copy has matplotlib.
+* Install Subversion. You need it for Sparsehash.
 * Edit the Makefile to set CXX, CXXFLAGS, and PYTHON to values that will work on your system.
 * `make`
 * Wait. The benchmarks take a while to run.
