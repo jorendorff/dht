@@ -107,7 +107,7 @@ public:
 class CloseTable {
 private:
     // The number of buckets in the table initially.
-    // This must be one less than a power of two.
+    // This must be a power of two.
     static size_t initial_buckets() { return 4; }
 
     // The maximum load factor (mean number of entries per bucket).
