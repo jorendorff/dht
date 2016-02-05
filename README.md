@@ -29,3 +29,14 @@ On Windows, you're going to use a batch file, because Windows is awesome.
 * figure-1.png shows how much memory each implementation allocates. figure-1-data.txt is the raw data.
 * figure-2.png shows how much memory each implementation uses (that is, how much of the allocated memory is actually accessed). figure-2-data.txt is the raw data.
 * The images InsertSmallTest-speed.png and friends show how fast each implementation is at each test. Higher is better. The file hashbench-data.txt contains the raw data for all these graphs. It's JSON.
+
+
+## License
+
+The code in this repository was written for the sole purpose of evaluating the data structures.
+[The results page](https://wiki.mozilla.org/User:Jorend/Deterministic_hash_tables)
+tells how this specific goal affected the code.
+This is not a general-purpose hash table library. Don't expect too much!
+
+That said, feel free to use everything in this repository under the terms of
+[the MIT license](http://opensource.org/licenses/MIT).
